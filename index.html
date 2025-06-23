@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Omega - The Final Diagnostic Suite</title>
+    <title>Project Omega - Sentinel Mode</title>
     
     <!-- External Libraries -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -22,6 +22,7 @@
             --card-bg: #101024;
             --accent-color: #c71585; /* MediumVioletRed */
             --glow-color: rgba(199, 21, 133, 0.5);
+            --alarm-color: #dc3545;
         }
         html, body { overflow-x: hidden; }
         body { font-family: 'Noto Sans Bengali', sans-serif; background-color: var(--bs-dark); }
@@ -46,12 +47,20 @@
         .text-danger { color: #dc3545 !important; }
         .pre-scrollable { max-height: 400px; }
         #dead-pixel-tester { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: none; }
+        
+        @keyframes alarm-flash {
+            0%, 100% { background-color: var(--bs-dark); }
+            50% { background-color: var(--alarm-color); }
+        }
+        .alarm-active {
+            animation: alarm-flash 1s infinite;
+        }
     </style>
 </head>
 <body>
     <div id="dead-pixel-tester"></div>
     <nav class="navbar sticky-top mb-4">
-        <div class="container-fluid"><a class="navbar-brand"><i class="bi bi-amd"></i> Project Omega</a>
+        <div class="container-fluid"><a class="navbar-brand"><i class="bi bi-shield-lock-fill"></i> Project Omega: Sentinel</a>
             <div class="d-flex align-items-center">
                 <div id="live-clock" class="me-3"></div><button class="btn btn-outline-danger btn-sm" onclick="location.reload()"><i class="bi bi-arrow-clockwise"></i></button>
             </div>
@@ -59,20 +68,77 @@
     </nav>
     <div class="container-fluid">
         <ul class="nav nav-pills justify-content-center mb-4" id="pills-tab" role="tablist">
-            <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#pills-testers">ইন্টারেক্টিভ পরীক্ষক</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#pills-security">সিকিউরিটি সিস্টেম</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pills-testers">ইন্টারেক্টিভ পরীক্ষক</button></li>
             <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pills-system">সিস্টেম ও হার্ডওয়্যার</button></li>
             <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pills-browser">ব্রাউজার ও নিরাপত্তা</button></li>
-            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pills-media">গ্রাফিক্স ও মিডিয়া</button></li>
         </ul>
         <div class="tab-content" id="pills-tabContent">
-            <div class="tab-pane fade show active" id="pills-testers" role="tabpanel">
+            <!-- Security Tab -->
+            <div class="tab-pane fade show active" id="pills-security" role="tabpanel">
                 <div class="row">
+                    <div class="col-lg-4">
+                        <div class="info-card">
+                            <div class="card-header"><i class="bi bi-gear-fill"></i> কন্ট্রোল প্যানেল</div>
+                            <div class="card-body text-center">
+                                <h5 class="mb-3">সিস্টেম স্ট্যাটাস: <span id="system-status" class="badge bg-secondary">নিষ্ক্রিয়</span></h5>
+                                <div class="btn-group w-100">
+                                    <button id="arm-btn" class="btn btn-success"><i class="bi bi-shield-check"></i> সিস্টেম আর্ম করুন</button>
+                                    <button id="disarm-btn" class="btn btn-danger" disabled><i class="bi bi-shield-x"></i> ডিজার্ম করুন</button>
+                                </div>
+                                <hr>
+                                <h6>EmailJS সেটিংস</h6>
+                                <div class="form-floating mb-2">
+                                    <input type="text" class="form-control" id="emailjs-service-id" placeholder="Service ID">
+                                    <label for="emailjs-service-id">Service ID</label>
+                                </div>
+                                <div class="form-floating mb-2">
+                                    <input type="text" class="form-control" id="emailjs-template-id" placeholder="Template ID">
+                                    <label for="emailjs-template-id">Template ID</label>
+                                </div>
+                                <div class="form-floating mb-2">
+                                    <input type="text" class="form-control" id="emailjs-public-key" placeholder="Public Key">
+                                    <label for="emailjs-public-key">Public Key</label>
+                                </div>
+                                <div class="form-floating mb-2">
+                                    <input type="email" class="form-control" id="recipient-email" placeholder="Recipient Email">
+                                    <label for="recipient-email">প্রাপকের ইমেইল</label>
+                                </div>
+                                <button id="save-settings-btn" class="btn btn-primary w-100">সেটিংস সেভ করুন</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="info-card">
+                            <div class="card-header"><i class="bi bi-camera-video-fill"></i> লাইভ মনিটর</div>
+                            <div class="card-body">
+                                <video id="security-camera-feed" playsinline autoplay muted style="width:100%; border-radius: 0.5rem;"></video>
+                                <canvas id="motion-canvas" class="d-none"></canvas>
+                            </div>
+                        </div>
+                        <div class="info-card">
+                            <div class="card-header"><i class="bi bi-image"></i> সর্বশেষ ধারণকৃত ছবি</div>
+                            <div class="card-body">
+                                <img id="last-capture" src="https://placehold.co/400x300/101024/c71585?text=No+Capture" alt="Last Capture" style="width:100%; border-radius:0.5rem;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="info-card">
+                             <div class="card-header"><i class="bi bi-list-check"></i> ইভেন্ট লগ</div>
+                             <div class="card-body">
+                                 <ul class="list-group list-group-flush pre-scrollable" id="event-log"></ul>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-pane fade" id="pills-testers" role="tabpanel">
+                 <div class="row">
                     <div class="col-lg-4 col-md-6"><div class="info-card tester-card"><h5 class="card-title text-center w-100 mb-2"><i class="bi bi-hand-index-thumb"></i> মাল্টি-টাচ টেস্ট</h5><canvas id="multi-touch-canvas" height="220"></canvas></div></div>
                     <div class="col-lg-4 col-md-6"><div class="info-card tester-card"><h5 class="card-title text-center w-100 mb-2"><i class="bi bi-camera-video"></i> ক্যামেরা টেস্ট</h5><video id="camera-feed" class="mb-2" playsinline autoplay muted></video><button id="switch-camera-btn" class="btn btn-sm btn-outline-info d-none"><i class="bi bi-arrow-repeat"></i> ক্যামেরা পরিবর্তন</button></div></div>
                     <div class="col-lg-4 col-md-6"><div class="info-card tester-card"><h5 class="card-title text-center w-100 mb-2"><i class="bi bi-mic"></i> মাইক্রোফোন টেস্ট</h5><canvas id="mic-visualizer" height="220"></canvas></div></div>
-                    <div class="col-lg-4 col-md-6"><div class="info-card tester-card"><h5 class="card-title text-center w-100 mb-2"><i class="bi bi-phone-vibrate"></i> সেন্সর ফিউশন (3D)</h5><div id="sensor-3d-container" style="width:100%; height:220px;"></div></div></div>
-                    <div class="col-lg-4 col-md-6"><div class="info-card tester-card"><h5 class="card-title text-center w-100 mb-2"><i class="bi bi-keyboard"></i> কিবোর্ড ও মাউস টেস্ট</h5><ul class="list-group w-100"><li class="list-group-item" id="keyboard-key"><strong>Key:</strong> <span class="value"></span></li><li class="list-group-item" id="keyboard-code"><strong>Code:</strong> <span class="value"></span></li><li class="list-group-item" id="mouse-pos"><strong>Pointer:</strong> <span class="value"></span></li><li class="list-group-item" id="mouse-btn"><strong>Button:</strong> <span class="value"></span></li></ul></div></div>
-                    <div class="col-lg-4 col-md-6"><div class="info-card tester-card justify-content-around"><h5 class="card-title text-center w-100"><i class="bi bi-display"></i> অন্যান্য পরীক্ষক</h5><button id="screen-test-btn" class="btn btn-primary"><i class="bi bi-fullscreen"></i> ডেড পিক্সেল টেস্ট</button><button id="speaker-test-btn" class="btn btn-success"><i class="bi bi-speaker"></i> স্পিকার টেস্ট</button><button id="vibration-test-btn" class="btn btn-warning"><i class="bi bi-phone-vibrate"></i> ভাইব্রেশন টেস্ট</button><div id="geolocation-info" class="text-center mt-2"></div></div></div>
                 </div>
             </div>
             <div class="tab-pane fade" id="pills-system" role="tabpanel"><div class="accordion" id="system-accordion"></div></div>
@@ -84,145 +150,188 @@
     <script>
     document.addEventListener('DOMContentLoaded', async () => {
         const el = (id) => document.getElementById(id);
-        let infoCount = 0;
-        const addInfo = (contentArray, label, value) => {
-            const valStr = typeof value === 'boolean' ? (value ? '<span class="text-success">Yes</span>' : '<span class="text-danger">No</span>') : (value === null || value === undefined) ? '<span class="text-secondary">N/A</span>' : value;
-            contentArray.push(`<li class="list-group-item d-flex justify-content-between"><strong>${label}</strong> <span class="value">${valStr}</span></li>`);
-            infoCount++;
-        };
-        const addAccordion = (parentId, id, title, content) => el(parentId).innerHTML += `<div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#${id}">${title}</button></h2><div id="${id}" class="accordion-collapse collapse" data-bs-parent="#${parentId}"><div class="accordion-body"><ul class="list-group list-group-flush pre-scrollable">${content.join('')}</ul></div></div></div>`;
-
-        // --- Clock ---
-        setInterval(() => { el('live-clock').textContent = new Date().toLocaleTimeString('en-GB'); }, 1000);
         
-        // --- Interactive Testers ---
-        // Multi-touch
-        const touchCanvas = el('multi-touch-canvas');
-        const touchCtx = touchCanvas.getContext('2d');
-        const touches = {};
-        const touchColors = ['#c71585', '#00bfff', '#32cd32', '#ffc107', '#6f42c1', '#fd7e14'];
-        const drawTouches = () => {
-            touchCtx.clearRect(0, 0, touchCanvas.width, touchCanvas.height);
-            Object.values(touches).forEach((touch, i) => {
-                touchCtx.beginPath();
-                touchCtx.arc(touch.x, touch.y, 20, 0, 2 * Math.PI, false);
-                touchCtx.fillStyle = touchColors[i % touchColors.length];
-                touchCtx.fill();
-            });
-        };
-        touchCanvas.addEventListener('touchstart', e => { e.preventDefault(); Array.from(e.changedTouches).forEach(t => touches[t.identifier] = { x: t.pageX - touchCanvas.offsetLeft, y: t.pageY - touchCanvas.offsetTop }); drawTouches(); });
-        touchCanvas.addEventListener('touchmove', e => { e.preventDefault(); Array.from(e.changedTouches).forEach(t => touches[t.identifier] = { x: t.pageX - touchCanvas.offsetLeft, y: t.pageY - touchCanvas.offsetTop }); drawTouches(); });
-        touchCanvas.addEventListener('touchend', e => { e.preventDefault(); Array.from(e.changedTouches).forEach(t => delete touches[t.identifier]); drawTouches(); });
+        // --- Security System Logic ---
+        let isArmed = false;
+        let lastCaptureTime = 0;
+        let motionCheckInterval;
+        let securityStream;
+        const armBtn = el('arm-btn');
+        const disarmBtn = el('disarm-btn');
+        const statusBadge = el('system-status');
+        const eventLog = el('event-log');
+        let emailjsConfig = {};
 
-        // Camera
-        let videoDevices = [], currentDeviceIndex = 0;
-        const videoEl = el('camera-feed');
-        if (navigator.mediaDevices?.enumerateDevices) {
-            videoDevices = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
-            if(videoDevices.length > 0) el('switch-camera-btn').classList.toggle('d-none', videoDevices.length <= 1);
-        }
-        const startCamera = async (deviceId) => {
-            if(videoEl.srcObject) videoEl.srcObject.getTracks().forEach(t => t.stop());
+        const logEvent = (message, type = 'info') => {
+            const colors = { info: 'text-white', motion: 'text-warning', sound: 'text-warning', email: 'text-success', error: 'text-danger' };
+            const icon = { info: 'bi-info-circle', motion: 'bi-person-walking', sound: 'bi-volume-up', email: 'bi-envelope', error: 'bi-exclamation-triangle' };
+            eventLog.innerHTML += `<li class="list-group-item ${colors[type]}"><i class="bi ${icon[type]} me-2"></i>[${new Date().toLocaleTimeString()}] ${message}</li>`;
+            eventLog.scrollTop = eventLog.scrollHeight;
+        };
+
+        const triggerAlarm = (reason) => {
+            if (Date.now() - lastCaptureTime < 30000) return; // 30 second cooldown
+            lastCaptureTime = Date.now();
+            
+            logEvent(`অনুপ্রবেশ শনাক্ত: ${reason}! অ্যালার্ম অ্যাক্টিভেটেড।`, reason.includes('Motion') ? 'motion' : 'sound');
+            document.body.classList.add('alarm-active');
+            new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU'+Array(1e3).join('12111121')).play();
+            
+            captureAndSend(reason);
+
+            setTimeout(() => document.body.classList.remove('alarm-active'), 5000);
+        };
+        
+        const captureAndSend = (reason) => {
+            const video = el('security-camera-feed');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageDataUrl = canvas.toDataURL('image/jpeg');
+            el('last-capture').src = imageDataUrl;
+            
+            if (emailjsConfig.serviceId && emailjsConfig.templateId && emailjsConfig.publicKey && emailjsConfig.recipient) {
+                logEvent('ইমেইল পাঠানোর চেষ্টা করা হচ্ছে...', 'info');
+                const templateParams = {
+                    recipient: emailjsConfig.recipient,
+                    message: `Project Omega একটি ${reason} শনাক্ত করেছে।`,
+                    image_data: imageDataUrl,
+                };
+                
+                fetch('https://api.emailjs.com/api/v1.0/email/send', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        service_id: emailjsConfig.serviceId,
+                        template_id: emailjsConfig.templateId,
+                        user_id: emailjsConfig.publicKey,
+                        template_params: templateParams,
+                    }),
+                })
+                .then(response => response.ok ? logEvent('ছবিসহ ইমেইল সফলভাবে পাঠানো হয়েছে।', 'email') : logEvent('ইমেইল পাঠাতে ব্যর্থ।', 'error'))
+                .catch(err => logEvent(`ইমেইল পাঠাতে ত্রুটি: ${err}`, 'error'));
+            } else {
+                logEvent('EmailJS সেটিংস সঠিক নয়। ইমেইল পাঠানো সম্ভব নয়।', 'error');
+            }
+        };
+
+        el('save-settings-btn').onclick = () => {
+            emailjsConfig = {
+                serviceId: el('emailjs-service-id').value,
+                templateId: el('emailjs-template-id').value,
+                publicKey: el('emailjs-public-key').value,
+                recipient: el('recipient-email').value,
+            };
+            localStorage.setItem('omega-emailjs-config', JSON.stringify(emailjsConfig));
+            logEvent('EmailJS সেটিংস সেভ করা হয়েছে।', 'info');
+        };
+
+        const loadSettings = () => {
+            const saved = localStorage.getItem('omega-emailjs-config');
+            if (saved) {
+                emailjsConfig = JSON.parse(saved);
+                el('emailjs-service-id').value = emailjsConfig.serviceId || '';
+                el('emailjs-template-id').value = emailjsConfig.templateId || '';
+                el('emailjs-public-key').value = emailjsConfig.publicKey || '';
+                el('recipient-email').value = emailjsConfig.recipient || '';
+            }
+        };
+        loadSettings();
+
+        armBtn.onclick = async () => {
             try {
-                videoEl.srcObject = await navigator.mediaDevices.getUserMedia({ video: { deviceId: deviceId ? { exact: deviceId } : undefined } });
-            } catch (e) { console.error(e); }
+                securityStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                el('security-camera-feed').srcObject = securityStream;
+                isArmed = true;
+                armBtn.disabled = true;
+                disarmBtn.disabled = false;
+                statusBadge.textContent = 'সক্রিয়';
+                statusBadge.className = 'badge bg-success';
+                logEvent('সিস্টেম আর্মড এবং মনিটরিং চালু হয়েছে।', 'info');
+
+                // Motion Detection Setup
+                const video = el('security-camera-feed');
+                const canvas = el('motion-canvas');
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                const SCALE = 0.2;
+                let oldImageData;
+                
+                const checkMotion = () => {
+                    if (!isArmed) return;
+                    canvas.width = video.videoWidth * SCALE;
+                    canvas.height = video.videoHeight * SCALE;
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const newImageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+                    
+                    if(oldImageData){
+                        let diff = 0;
+                        for(let i=0; i < newImageData.length; i += 4) {
+                            diff += Math.abs(newImageData[i] - oldImageData[i]);
+                        }
+                        if(diff / newImageData.length > 1) { // Motion threshold
+                             triggerAlarm("Motion");
+                        }
+                    }
+                    oldImageData = newImageData;
+                }
+                motionCheckInterval = setInterval(checkMotion, 1000);
+
+                // Sound Detection Setup
+                const audioContext = new AudioContext();
+                const analyser = audioContext.createAnalyser();
+                const source = audioContext.createMediaStreamSource(securityStream);
+                source.connect(analyser);
+                analyser.fftSize = 512;
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                const checkSound = () => {
+                    if(!isArmed) return;
+                    requestAnimationFrame(checkSound);
+                    analyser.getByteFrequencyData(dataArray);
+                    let sum = dataArray.reduce((a, b) => a + b, 0);
+                    if (sum / dataArray.length > 50) { // Sound threshold
+                        triggerAlarm("Loud Noise");
+                    }
+                };
+                checkSound();
+
+            } catch (err) {
+                logEvent('ক্যামেরা বা মাইক্রোফোন চালু করা যায়নি।', 'error');
+            }
         };
-        el('pills-testers').classList.contains('active') && startCamera(videoDevices[0]?.deviceId);
-        el('switch-camera-btn').onclick = () => { currentDeviceIndex = (currentDeviceIndex + 1) % videoDevices.length; startCamera(videoDevices[currentDeviceIndex].deviceId); };
-        
-        // Mic
-        const micCanvas = el('mic-visualizer');
-        const micCtx = micCanvas.getContext('2d');
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const audioCtx = new AudioContext();
-            const analyser = audioCtx.createAnalyser();
-            audioCtx.createMediaStreamSource(stream).connect(analyser);
-            analyser.fftSize = 256;
-            const dataArray = new Uint8Array(analyser.frequencyBinCount);
-            const drawMic = () => {
-                requestAnimationFrame(drawMic);
-                analyser.getByteFrequencyData(dataArray);
-                micCtx.clearRect(0,0,micCanvas.width, micCanvas.height);
-                const barWidth = micCanvas.width / dataArray.length;
-                dataArray.forEach((v, i) => {
-                    micCtx.fillStyle = `rgba(199, 21, 133, ${v/255})`;
-                    micCtx.fillRect(i * barWidth, micCanvas.height - v, barWidth, v);
+
+        disarmBtn.onclick = () => {
+            isArmed = false;
+            securityStream.getTracks().forEach(track => track.stop());
+            clearInterval(motionCheckInterval);
+            armBtn.disabled = false;
+            disarmBtn.disabled = true;
+            statusBadge.textContent = 'নিষ্ক্রিয়';
+            statusBadge.className = 'badge bg-secondary';
+            logEvent('সিস্টেম ডিজার্ম করা হয়েছে।', 'info');
+        };
+
+        // Other testers
+        const touchCanvas = el('multi-touch-canvas');
+        if(touchCanvas){
+            const touchCtx = touchCanvas.getContext('2d');
+            const touches = {};
+            const touchColors = ['#c71585', '#00bfff', '#32cd32', '#ffc107', '#6f42c1', '#fd7e14'];
+            const drawTouches = () => {
+                touchCtx.clearRect(0, 0, touchCanvas.width, touchCanvas.height);
+                Object.values(touches).forEach((touch, i) => {
+                    touchCtx.beginPath();
+                    touchCtx.arc(touch.x, touch.y, 20, 0, 2 * Math.PI, false);
+                    touchCtx.fillStyle = touchColors[i % touchColors.length];
+                    touchCtx.fill();
                 });
             };
-            drawMic();
-        } catch(e) { console.error(e); }
-
-        // 3D Sensor
-        const sensorContainer = el('sensor-3d-container');
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, sensorContainer.clientWidth / sensorContainer.clientHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ alpha: true });
-        renderer.setSize(sensorContainer.clientWidth, sensorContainer.clientHeight);
-        sensorContainer.appendChild(renderer.domElement);
-        const geometry = new THREE.BoxGeometry(2, 2, 2);
-        const material = new THREE.MeshBasicMaterial({ color: 0xc71585, wireframe: true });
-        const cube = new THREE.Mesh(geometry, material);
-        scene.add(cube);
-        camera.position.z = 5;
-        const animate = () => { requestAnimationFrame(animate); renderer.render(scene, camera); };
-        animate();
-        window.addEventListener('deviceorientation', e => {
-            const { alpha, beta, gamma } = e;
-            cube.rotation.x = beta * (Math.PI / 180);
-            cube.rotation.y = gamma * (Math.PI / 180);
-            cube.rotation.z = alpha * (Math.PI / 180);
-        }, true);
-        
-        // Keyboard & Mouse
-        const updateText = (id, val) => el(id).querySelector('.value').textContent = val;
-        window.addEventListener('keydown', e => { updateText('keyboard-key', e.key); updateText('keyboard-code', e.code); });
-        window.addEventListener('mousemove', e => updateText('mouse-pos', `${e.x}, ${e.y}`));
-        window.addEventListener('mousedown', e => updateText('mouse-btn', `Button ${e.button} Down`));
-        window.addEventListener('mouseup', e => updateText('mouse-btn', `Button ${e.button} Up`));
-
-        // Other Testers
-        const pixelTester = el('dead-pixel-tester');
-        el('screen-test-btn').onclick = () => {
-            pixelTester.style.display = 'block';
-            pixelTester.requestFullscreen();
-            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffffff', '#000000']; let i = 0;
-            const cycle = () => pixelTester.style.backgroundColor = colors[i++ % colors.length];
-            cycle();
-            pixelTester.onclick = cycle;
-            document.onfullscreenchange = () => { if(!document.fullscreenElement) pixelTester.style.display = 'none'; };
-        };
-        el('speaker-test-btn').onclick = () => { new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=')?.play(); };
-        el('vibration-test-btn').onclick = () => navigator.vibrate?.(200);
-        navigator.geolocation?.getCurrentPosition(p => el('geolocation-info').textContent = `Lat: ${p.coords.latitude.toFixed(4)}, Lon: ${p.coords.longitude.toFixed(4)}`);
-        
-        // --- Information Gathering ---
-        const n = navigator, w = window, s = screen;
-        let sys = [], hdw = [], bws = [], sec = [], gfx = [], med = [];
-        // System & Hardware
-        addInfo(sys, 'OS', (await n.userAgentData?.getHighEntropyValues(["platform", "platformVersion"]))?.platform || n.platform);
-        addInfo(sys, 'Architecture', (await n.userAgentData?.getHighEntropyValues(["architecture"]))?.architecture || 'N/A');
-        addInfo(sys, 'Device Model', (await n.userAgentData?.getHighEntropyValues(["model"]))?.model || 'N/A');
-        addInfo(hdw, 'CPU Cores', n.hardwareConcurrency);
-        if (n.deviceMemory) addInfo(hdw, 'RAM (approx)', `${n.deviceMemory} GB`);
-        if (n.storage?.estimate) { const { quota, usage } = await n.storage.estimate(); addInfo(hdw, 'Storage Quota', `${(quota/1024**3).toFixed(2)} GB`); addInfo(hdw, 'Storage Used', `${(usage/1024**2).toFixed(2)} MB`); }
-        if (n.getBattery) { const b = await n.getBattery(); addInfo(hdw, 'Battery Level', `${Math.round(b.level*100)}%`); addInfo(hdw, 'Battery Charging', b.charging); }
-        addAccordion('system-accordion', 'sys-info', 'System', sys);
-        addAccordion('system-accordion', 'hdw-info', 'Hardware', hdw);
-
-        // Browser & Security
-        ['userAgent', 'vendor', 'language', 'onLine', 'cookieEnabled', 'pdfViewerEnabled', 'doNotTrack'].forEach(p => addInfo(bws, p, n[p]));
-        ['isSecureContext', 'crossOriginIsolated'].forEach(p => addInfo(sec, p, w[p]));
-        if(w.crypto?.subtle) { const algos = ['AES-GCM', 'RSA-OAEP', 'ECDH']; let content = ''; for(const a of algos) { content += `<li class="list-group-item">${a}: ${await w.crypto.subtle.generateKey({name:a, length:256, modulusLength:2048, namedCurve:'P-256'}, true, ['encrypt']).then(()=>'Yes').catch(()=>'No')}</li>`; } addAccordion('browser-accordion', 'crypto-info', 'Crypto Support', [content]); }
-        addAccordion('browser-accordion', 'bws-info', `Browser (${bws.length})`, bws);
-        addAccordion('browser-accordion', 'sec-info', `Security (${sec.length})`, sec);
-        
-        // Graphics & Media
-        const gl2 = document.createElement('canvas').getContext('webgl2');
-        if(gl2) { let content = []; const p = ['MAX_SAMPLES', 'MAX_3D_TEXTURE_SIZE']; p.forEach(key => addInfo(content, key, gl2.getParameter(gl2[key]))); addAccordion('media-accordion', 'gl2-info', 'WebGL2 Params', content); }
-        if (n.mediaCapabilities) { let content = []; const c = [{c:'av01.0.08M.08',n:'AV1'},{c:'hvc1.1.6.L93.B0',n:'HEVC'},{c:'vp09.00.50.08',n:'VP9'}]; for(const {c,n} of c){ const {supported} = await n.mediaCapabilities.decodingInfo({type:'file',video:{contentType:`video/mp4; codecs="${c}"`}}); content.push(`<li class="list-group-item d-flex justify-content-between"><strong>${n}</strong> <span class="value">${supported?'Yes':'No'}</span></li>`); } addAccordion('media-accordion', 'med-cap', 'Video Codec Support', content); }
-
-        el('pills-tab').querySelectorAll('.nav-link .spinner-border')?.forEach(s => s.remove());
+            touchCanvas.addEventListener('touchstart', e => { e.preventDefault(); Array.from(e.changedTouches).forEach(t => { const rect = touchCanvas.getBoundingClientRect(); touches[t.identifier] = { x: t.clientX - rect.left, y: t.clientY - rect.top }; }); drawTouches(); });
+            touchCanvas.addEventListener('touchmove', e => { e.preventDefault(); Array.from(e.changedTouches).forEach(t => { const rect = touchCanvas.getBoundingClientRect(); touches[t.identifier] = { x: t.clientX - rect.left, y: t.clientY - rect.top }; }); drawTouches(); });
+            touchCanvas.addEventListener('touchend', e => { e.preventDefault(); Array.from(e.changedTouches).forEach(t => delete touches[t.identifier]); drawTouches(); });
+        }
     });
     </script>
 </body>
