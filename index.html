@@ -1,290 +1,229 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="bn" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ইন্টারেক্টিভ দৈনিক রুটিন ড্যাশবোর্ড</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Chosen Palette: Warm Neutrals (Stone, Amber, Teal) -->
-    <!-- Application Structure Plan: A two-part SPA. Part 1 is an interactive daily schedule with a time-allocation donut chart and a live-updating timeline to show the current task. This makes the static routine a dynamic, functional tool. Part 2 presents the 'Keys to Success' as interactive cards to make the principles more engaging and digestible. Navigation allows smooth scrolling between these logical sections, prioritizing user flow over the original linear document structure. -->
-    <!-- Visualization & Content Choices: 1. Routine -> Goal: Organize/Inform -> Viz: Donut Chart (Chart.js) & Live Timeline (HTML/JS) -> Interaction: Chart tooltips & automatic live highlighting of the current task. -> Justification: Provides both a high-level summary of time use and a practical, real-time guide for the user. 2. Success Keys -> Goal: Inform/Organize -> Viz: Interactive Cards (HTML/CSS/JS) -> Interaction: Click-to-reveal details. -> Justification: Breaks down text-heavy principles into engaging, focused chunks. -> CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <title>Project Omega - The Final Diagnostic Suite</title>
+    
+    <!-- External Libraries -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;700&family=Orbitron:wght@700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+
     <style>
-        body {
-            font-family: 'Hind Siliguri', sans-serif;
-            scroll-behavior: smooth;
+        :root {
+            --bs-dark: #0a0a14;
+            --bs-body-bg: var(--bs-dark);
+            --bs-body-color: #d0d0e0;
+            --bs-border-color-translucent: rgba(199, 21, 133, 0.2);
+            --card-bg: #101024;
+            --accent-color: #c71585; /* MediumVioletRed */
+            --glow-color: rgba(199, 21, 133, 0.5);
         }
-        .chart-container {
-            position: relative;
-            width: 100%;
-            max-width: 450px;
-            margin-left: auto;
-            margin-right: auto;
-            height: 350px;
-            max-height: 400px;
-        }
-        @media (min-width: 768px) {
-            .chart-container {
-                height: 400px;
-            }
-        }
-        .task-card.current {
-            background-color: #ccfbf1;
-            border-left-color: #14b8a6;
-            transform: scale(1.02);
-        }
-        .key-card .details {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.5s ease-in-out;
-        }
-        .key-card.open .details {
-            max-height: 500px;
-        }
-        .key-card.open .arrow {
-            transform: rotate(180deg);
-        }
+        html, body { overflow-x: hidden; }
+        body { font-family: 'Noto Sans Bengali', sans-serif; background-color: var(--bs-dark); }
+        .navbar { background: rgba(16, 16, 36, 0.8); backdrop-filter: blur(12px); border-bottom: 1px solid var(--bs-border-color-translucent); }
+        .navbar-brand { font-family: 'Orbitron', sans-serif; font-size: 1.5rem; color: var(--accent-color); text-shadow: 0 0 10px var(--glow-color); }
+        #live-clock { font-family: 'Roboto Mono', monospace; font-size: 1rem; color: var(--accent-color); }
+        .nav-pills .nav-link { color: var(--bs-body-color); background-color: var(--card-bg); border: 1px solid var(--bs-border-color-translucent); margin: 0 5px; }
+        .nav-pills .nav-link.active { background-color: var(--accent-color); color: white; font-weight: 700; box-shadow: 0 0 15px var(--glow-color); }
+        .info-card { background-color: var(--card-bg); border: 1px solid var(--bs-border-color-translucent); border-radius: 0.75rem; margin-bottom: 1.5rem; }
+        .card-header { background-color: transparent; border-bottom: 1px solid var(--bs-border-color-translucent); font-weight: 700; color: var(--accent-color); display: flex; align-items: center; }
+        .card-header .bi { margin-right: 10px; }
+        .tester-card { min-height: 300px; padding: 1rem; }
+        .tester-card video, .tester-card canvas { width: 100%; border-radius: 0.5rem; background-color: #000; }
+        #multi-touch-canvas { cursor: crosshair; }
+        .accordion-item, .accordion-button { background-color: var(--card-bg); border-color: var(--bs-border-color-translucent); color: var(--bs-body-color); }
+        .accordion-button:not(.collapsed) { background-color: var(--accent-color); color: white; }
+        .accordion-button::after { filter: invert(1) grayscale(100%) brightness(200%); }
+        .list-group-item { background-color: transparent; border-color: rgba(199, 21, 133, 0.1); font-family: 'Roboto Mono', monospace; font-size: 0.85rem; padding: 0.4rem 0.8rem; }
+        .list-group-item strong { color: #a0a0c0; }
+        .list-group-item .value { color: #ffffff; text-align: right; word-break: break-all; }
+        .text-success { color: #28a745 !important; }
+        .text-danger { color: #dc3545 !important; }
+        .pre-scrollable { max-height: 400px; }
+        #dead-pixel-tester { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: none; }
     </style>
 </head>
-<body class="bg-stone-50 text-stone-800">
-
-    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
-        <nav class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex-shrink-0">
-                    <h1 class="text-xl font-bold text-teal-700">আমার দিন</h1>
-                </div>
-                <div class="hidden md:block">
-                    <div class="ml-10 flex items-baseline space-x-4">
-                        <a href="#routine" class="text-stone-600 hover:bg-teal-50 hover:text-teal-700 px-3 py-2 rounded-md text-sm font-medium">দৈনিক রুটিন</a>
-                        <a href="#success-keys" class="text-stone-600 hover:bg-teal-50 hover:text-teal-700 px-3 py-2 rounded-md text-sm font-medium">সাফল্যের মূল চাবিকাঠি</a>
-                    </div>
-                </div>
+<body>
+    <div id="dead-pixel-tester"></div>
+    <nav class="navbar sticky-top mb-4">
+        <div class="container-fluid"><a class="navbar-brand"><i class="bi bi-amd"></i> Project Omega</a>
+            <div class="d-flex align-items-center">
+                <div id="live-clock" class="me-3"></div><button class="btn btn-outline-danger btn-sm" onclick="location.reload()"><i class="bi bi-arrow-clockwise"></i></button>
             </div>
-        </nav>
-    </header>
-
-    <main class="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-
-        <section id="routine" class="mb-16">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl font-bold text-teal-800">দৈনিক রুটিন ও সময় বন্টন</h2>
-                <h4 class="text-2xl font-bold text-teal-800">নওশেদ আহমেদ ঝলক</h4>
-                <p class="mt-4 text-lg text-stone-600">
-                    এই ড্যাশবোর্ডটি আমার নির্ধারিত রুটিনকে একটি ইন্টারেক্টিভ উপায়ে উপস্থাপন করে। এখানে আমি আমার সময় বন্টনের একটি চিত্র দেখতে পারি এবং বর্তমানে কোন কাজটি চলছে তা স্বয়ংক্রিয়ভাবে হাইলাইট হয়ে থাকে।
-                </p>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
-                <div class="lg:col-span-3 bg-white p-6 rounded-2xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4 text-center text-stone-700">আজকের কার্যক্রম (শনিবার - বৃহস্পতিবার)</h3>
-                    <div id="timeline" class="space-y-4">
-                    </div>
-                </div>
-                
-                <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-lg sticky top-24">
-                    <h3 class="text-xl font-semibold mb-4 text-center text-stone-700">সময় বন্টন বিশ্লেষণ</h3>
-                     <div class="chart-container">
-                        <canvas id="routineChart"></canvas>
-                    </div>
-                    <p id="currentTime" class="mt-4 text-center font-semibold text-teal-700 text-lg"></p>
-                </div>
-            </div>
-        </section>
-
-        <section id="success-keys">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl font-bold text-teal-800">সাফল্যের মূল চাবিকাঠি</h2>
-                <p class="mt-4 text-lg text-stone-600">
-                    শুধু রুটিন অনুসরণ করাই যথেষ্ট নয়। দীর্ঘমেয়াদী সাফল্যের জন্য এই নীতিগুলো বোঝা এবং প্রয়োগ করা অত্যন্ত গুরুত্বপূর্ণ। প্রতিটি কার্ডে ক্লিক করে বিস্তারিত জানুন।
-                </p>
-            </div>
-
-            <div id="keys-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            </div>
-        </section>
-    </main>
-    
-    <footer class="bg-white mt-16">
-        <div class="max-w-6xl mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-stone-500">
-            <p>&copy; <span id="year"></span> আমার ব্যক্তিগত ড্যাশবোর্ড।</p>
         </div>
-    </footer>
-
+    </nav>
+    <div class="container-fluid">
+        <ul class="nav nav-pills justify-content-center mb-4" id="pills-tab" role="tablist">
+            <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#pills-testers">ইন্টারেক্টিভ পরীক্ষক</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pills-system">সিস্টেম ও হার্ডওয়্যার</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pills-browser">ব্রাউজার ও নিরাপত্তা</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pills-media">গ্রাফিক্স ও মিডিয়া</button></li>
+        </ul>
+        <div class="tab-content" id="pills-tabContent">
+            <div class="tab-pane fade show active" id="pills-testers" role="tabpanel">
+                <div class="row">
+                    <div class="col-lg-4 col-md-6"><div class="info-card tester-card"><h5 class="card-title text-center w-100 mb-2"><i class="bi bi-hand-index-thumb"></i> মাল্টি-টাচ টেস্ট</h5><canvas id="multi-touch-canvas" height="220"></canvas></div></div>
+                    <div class="col-lg-4 col-md-6"><div class="info-card tester-card"><h5 class="card-title text-center w-100 mb-2"><i class="bi bi-camera-video"></i> ক্যামেরা টেস্ট</h5><video id="camera-feed" class="mb-2" playsinline autoplay muted></video><button id="switch-camera-btn" class="btn btn-sm btn-outline-info d-none"><i class="bi bi-arrow-repeat"></i> ক্যামেরা পরিবর্তন</button></div></div>
+                    <div class="col-lg-4 col-md-6"><div class="info-card tester-card"><h5 class="card-title text-center w-100 mb-2"><i class="bi bi-mic"></i> মাইক্রোফোন টেস্ট</h5><canvas id="mic-visualizer" height="220"></canvas></div></div>
+                    <div class="col-lg-4 col-md-6"><div class="info-card tester-card"><h5 class="card-title text-center w-100 mb-2"><i class="bi bi-phone-vibrate"></i> সেন্সর ফিউশন (3D)</h5><div id="sensor-3d-container" style="width:100%; height:220px;"></div></div></div>
+                    <div class="col-lg-4 col-md-6"><div class="info-card tester-card"><h5 class="card-title text-center w-100 mb-2"><i class="bi bi-keyboard"></i> কিবোর্ড ও মাউস টেস্ট</h5><ul class="list-group w-100"><li class="list-group-item" id="keyboard-key"><strong>Key:</strong> <span class="value"></span></li><li class="list-group-item" id="keyboard-code"><strong>Code:</strong> <span class="value"></span></li><li class="list-group-item" id="mouse-pos"><strong>Pointer:</strong> <span class="value"></span></li><li class="list-group-item" id="mouse-btn"><strong>Button:</strong> <span class="value"></span></li></ul></div></div>
+                    <div class="col-lg-4 col-md-6"><div class="info-card tester-card justify-content-around"><h5 class="card-title text-center w-100"><i class="bi bi-display"></i> অন্যান্য পরীক্ষক</h5><button id="screen-test-btn" class="btn btn-primary"><i class="bi bi-fullscreen"></i> ডেড পিক্সেল টেস্ট</button><button id="speaker-test-btn" class="btn btn-success"><i class="bi bi-speaker"></i> স্পিকার টেস্ট</button><button id="vibration-test-btn" class="btn btn-warning"><i class="bi bi-phone-vibrate"></i> ভাইব্রেশন টেস্ট</button><div id="geolocation-info" class="text-center mt-2"></div></div></div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="pills-system" role="tabpanel"><div class="accordion" id="system-accordion"></div></div>
+            <div class="tab-pane fade" id="pills-browser" role="tabpanel"><div class="accordion" id="browser-accordion"></div></div>
+            <div class="tab-pane fade" id="pills-media" role="tabpanel"><div class="accordion" id="media-accordion"></div></div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const routineData = [
-            { time: 'সকাল ৬:০০ - ৭:০০', task: 'নামাজ, শরীরচর্চা, মেডিটেশন, কফি', note: 'দিন শুরু করার প্রস্তুতি', icon: '🧘', category: 'ব্যক্তিগত প্রস্তুতি', start: 6, end: 7, duration: 1 },
-            { time: 'সকাল ৭:০০ - ৮:০০', task: 'সকালের নাস্তা ও দিনের পরিকল্পনা', note: 'আজকের প্রধান লক্ষ্যগুলো ঠিক করা', icon: '📝', category: 'প্ল্যানিং', start: 7, end: 8, duration: 1 },
-            { time: 'সকাল ৮:০০ - দুপুর ১:০০', task: 'Python, Django, React শেখা', note: 'মাঝে ৩০ মিনিটের বিরতি সহ', icon: '💻', category: 'শিক্ষা', start: 8, end: 13, duration: 5 },
-            { time: 'দুপুর ১:০০ - দুপুর ২:৩০', task: 'নামাজ, লাঞ্চ, হালকা ঘুম/বিশ্রাম', note: 'শরীর ও মস্তিষ্ককে রিচার্জ করা', icon: '🌙', category: 'বিশ্রাম', start: 13, end: 14.5, duration: 1.5 },
-            { time: 'দুপুর ২:৩০ - বিকাল ৫:৩০', task: 'প্রজেক্ট ও পোর্টফোলিও-এর কাজ', note: 'শেখা বিষয়গুলোর বাস্তব প্রয়োগ', icon: '🛠️', category: 'প্রজেক্ট', start: 14.5, end: 17.5, duration: 3 },
-            { time: 'বিকাল ৫:৩০ - সন্ধ্যা ৭:০০', task: 'কনটেন্ট তৈরি (ইউটিউব/ফেসবুক)', note: 'লক্ষ্য: প্রতি ৪ দিনে ১টি ভিডিও', icon: '🎬', category: 'কনটেন্ট', start: 17.5, end: 19, duration: 1.5 },
-            { time: 'সন্ধ্যা ৭:০০ - রাত ৮:০০', task: 'ব্যক্তিগত সময়', note: 'ব্যায়াম, ফ্রেশ হওয়া, আড্ডা, হাঁটা', icon: '🏃', category: 'ব্যক্তিগত সময়', start: 19, end: 20, duration: 1 },
-            { time: 'রাত ৮:০০ - রাত ৯:০০', task: 'পরিবারের সাথে সময়', note: 'রাতের খাবার ও গল্প', icon: '👨‍👩‍👧‍👦', category: 'পরিবার', start: 20, end: 21, duration: 1 },
-            { time: 'রাত ৯:০০ - রাত ১০:৩০', task: 'ইংরেজি চর্চা ও সোশ্যাল নেটওয়ার্কিং', note: 'কমিউনিটিতে সময় দেওয়া', icon: '🌐', category: 'নেটওয়ার্কিং', start: 21, end: 22.5, duration: 1.5 },
-            { time: 'রাত ১০:৩০ - রাত ১১:০০', task: 'দিনের পর্যালোচনা ও আগামীকালের পরিকল্পনা', note: 'অগ্রগতি এবং টার্গেট লেখা', icon: '📊', category: 'প্ল্যানিং', start: 22.5, end: 23, duration: 0.5 },
-            { time: 'রাত ১১:০০-এর পর', task: 'ঘুম', note: '৭-৮ ঘণ্টা ঘুম নিশ্চিত করা', icon: '😴', category: 'ঘুম', start: 23, end: 6, duration: 7 }
-        ];
+    document.addEventListener('DOMContentLoaded', async () => {
+        const el = (id) => document.getElementById(id);
+        let infoCount = 0;
+        const addInfo = (contentArray, label, value) => {
+            const valStr = typeof value === 'boolean' ? (value ? '<span class="text-success">Yes</span>' : '<span class="text-danger">No</span>') : (value === null || value === undefined) ? '<span class="text-secondary">N/A</span>' : value;
+            contentArray.push(`<li class="list-group-item d-flex justify-content-between"><strong>${label}</strong> <span class="value">${valStr}</span></li>`);
+            infoCount++;
+        };
+        const addAccordion = (parentId, id, title, content) => el(parentId).innerHTML += `<div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#${id}">${title}</button></h2><div id="${id}" class="accordion-collapse collapse" data-bs-parent="#${parentId}"><div class="accordion-body"><ul class="list-group list-group-flush pre-scrollable">${content.join('')}</ul></div></div></div>`;
 
-        const successKeysData = [
-            { title: 'আত্মশৃঙ্খলা (Self-Discipline)', icon: '⚖️', content: 'যেহেতু আপনার কোনো বস নেই, তাই আপনিই আপনার নিজের বস। প্রতিদিন সঠিক সময়ে কাজ শুরু করা, অপ্রয়োজনীয় distraction থেকে দূরে থাকা এবং রুটিন অনুযায়ী কাজ শেষ করার জন্য আত্মশৃঙ্খলা থাকা আবশ্যক।' },
-            { title: 'পোর্টফোলিও (Portfolio)', icon: '📁', content: 'আপনার বানানো প্রোজেক্টগুলোই আপনার দক্ষতার প্রমাণ। একটি সুন্দর এবং গোছানো পোর্টফোলিও তৈরি করুন যেখানে আপনার সেরা কাজগুলো থাকবে। এটিই ভবিষ্যতে চাকরি বা ফ্রিল্যান্সিং কাজ পেতে আপনার সিভি হিসেবে কাজ করবে।' },
-            { title: 'নেটওয়ার্কিং (Networking)', icon: '🤝', content: 'অন্যান্য ডেভেলপারদের সাথে অনলাইনে যোগাযোগ স্থাপন করুন। এতে আপনি নতুন জিনিস শিখতে পারবেন, ইন্ডাস্ট্রির খবরাখবর রাখতে পারবেন এবং প্রয়োজনে সাহায্য বা কাজের সুযোগ খুঁজে পাবেন।' },
-            { title: 'ধৈর্য (Patience)', icon: '⏳', content: 'সফলতা এক দিনে বা এক মাসে আসে না। প্রোগ্রামিং শেখা, ভালো প্রোজেক্ট বানানো এবং একটি ইউটিউব চ্যানেলকে সফল করা—সবই সময়সাপেক্ষ ব্যাপার। হতাশ না হয়ে ধৈর্য ধরে লেগে থাকুন।' }
-        ];
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const timelineContainer = document.getElementById('timeline');
-            routineData.forEach((item, index) => {
-                const card = document.createElement('div');
-                card.className = 'task-card flex items-start p-4 bg-stone-100 rounded-lg shadow-sm border-l-4 border-stone-200 transition-all duration-300';
-                card.dataset.index = index;
-                card.innerHTML = `
-                    <div class="text-3xl mr-4">${item.icon}</div>
-                    <div class="flex-grow">
-                        <p class="font-semibold text-stone-800">${item.task}</p>
-                        <p class="text-sm text-teal-600 font-medium">${item.time}</p>
-                        <p class="text-sm text-stone-500 mt-1">${item.note}</p>
-                    </div>
-                `;
-                timelineContainer.appendChild(card);
+        // --- Clock ---
+        setInterval(() => { el('live-clock').textContent = new Date().toLocaleTimeString('en-GB'); }, 1000);
+        
+        // --- Interactive Testers ---
+        // Multi-touch
+        const touchCanvas = el('multi-touch-canvas');
+        const touchCtx = touchCanvas.getContext('2d');
+        const touches = {};
+        const touchColors = ['#c71585', '#00bfff', '#32cd32', '#ffc107', '#6f42c1', '#fd7e14'];
+        const drawTouches = () => {
+            touchCtx.clearRect(0, 0, touchCanvas.width, touchCanvas.height);
+            Object.values(touches).forEach((touch, i) => {
+                touchCtx.beginPath();
+                touchCtx.arc(touch.x, touch.y, 20, 0, 2 * Math.PI, false);
+                touchCtx.fillStyle = touchColors[i % touchColors.length];
+                touchCtx.fill();
             });
+        };
+        touchCanvas.addEventListener('touchstart', e => { e.preventDefault(); Array.from(e.changedTouches).forEach(t => touches[t.identifier] = { x: t.pageX - touchCanvas.offsetLeft, y: t.pageY - touchCanvas.offsetTop }); drawTouches(); });
+        touchCanvas.addEventListener('touchmove', e => { e.preventDefault(); Array.from(e.changedTouches).forEach(t => touches[t.identifier] = { x: t.pageX - touchCanvas.offsetLeft, y: t.pageY - touchCanvas.offsetTop }); drawTouches(); });
+        touchCanvas.addEventListener('touchend', e => { e.preventDefault(); Array.from(e.changedTouches).forEach(t => delete touches[t.identifier]); drawTouches(); });
 
-            const keysContainer = document.getElementById('keys-container');
-            successKeysData.forEach(key => {
-                const card = document.createElement('div');
-                card.className = 'key-card bg-white rounded-2xl shadow-lg cursor-pointer overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1';
-                card.innerHTML = `
-                    <div class="p-6 flex justify-between items-center">
-                        <div class="flex items-center">
-                            <span class="text-3xl mr-4">${key.icon}</span>
-                            <h4 class="font-bold text-lg text-teal-800">${key.title}</h4>
-                        </div>
-                        <span class="arrow text-2xl text-teal-500 transition-transform duration-300">▼</span>
-                    </div>
-                    <div class="details px-6 pb-6 text-stone-600">
-                        <p>${key.content}</p>
-                    </div>
-                `;
-                keysContainer.appendChild(card);
-                card.addEventListener('click', () => {
-                    card.classList.toggle('open');
+        // Camera
+        let videoDevices = [], currentDeviceIndex = 0;
+        const videoEl = el('camera-feed');
+        if (navigator.mediaDevices?.enumerateDevices) {
+            videoDevices = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
+            if(videoDevices.length > 0) el('switch-camera-btn').classList.toggle('d-none', videoDevices.length <= 1);
+        }
+        const startCamera = async (deviceId) => {
+            if(videoEl.srcObject) videoEl.srcObject.getTracks().forEach(t => t.stop());
+            try {
+                videoEl.srcObject = await navigator.mediaDevices.getUserMedia({ video: { deviceId: deviceId ? { exact: deviceId } : undefined } });
+            } catch (e) { console.error(e); }
+        };
+        el('pills-testers').classList.contains('active') && startCamera(videoDevices[0]?.deviceId);
+        el('switch-camera-btn').onclick = () => { currentDeviceIndex = (currentDeviceIndex + 1) % videoDevices.length; startCamera(videoDevices[currentDeviceIndex].deviceId); };
+        
+        // Mic
+        const micCanvas = el('mic-visualizer');
+        const micCtx = micCanvas.getContext('2d');
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const audioCtx = new AudioContext();
+            const analyser = audioCtx.createAnalyser();
+            audioCtx.createMediaStreamSource(stream).connect(analyser);
+            analyser.fftSize = 256;
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            const drawMic = () => {
+                requestAnimationFrame(drawMic);
+                analyser.getByteFrequencyData(dataArray);
+                micCtx.clearRect(0,0,micCanvas.width, micCanvas.height);
+                const barWidth = micCanvas.width / dataArray.length;
+                dataArray.forEach((v, i) => {
+                    micCtx.fillStyle = `rgba(199, 21, 133, ${v/255})`;
+                    micCtx.fillRect(i * barWidth, micCanvas.height - v, barWidth, v);
                 });
-            });
+            };
+            drawMic();
+        } catch(e) { console.error(e); }
 
-            createChart();
-            updateCurrentTimeAndTask();
-            setInterval(updateCurrentTimeAndTask, 60000); 
-            
-            document.getElementById('year').textContent = new Date().getFullYear();
-        });
+        // 3D Sensor
+        const sensorContainer = el('sensor-3d-container');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, sensorContainer.clientWidth / sensorContainer.clientHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ alpha: true });
+        renderer.setSize(sensorContainer.clientWidth, sensorContainer.clientHeight);
+        sensorContainer.appendChild(renderer.domElement);
+        const geometry = new THREE.BoxGeometry(2, 2, 2);
+        const material = new THREE.MeshBasicMaterial({ color: 0xc71585, wireframe: true });
+        const cube = new THREE.Mesh(geometry, material);
+        scene.add(cube);
+        camera.position.z = 5;
+        const animate = () => { requestAnimationFrame(animate); renderer.render(scene, camera); };
+        animate();
+        window.addEventListener('deviceorientation', e => {
+            const { alpha, beta, gamma } = e;
+            cube.rotation.x = beta * (Math.PI / 180);
+            cube.rotation.y = gamma * (Math.PI / 180);
+            cube.rotation.z = alpha * (Math.PI / 180);
+        }, true);
+        
+        // Keyboard & Mouse
+        const updateText = (id, val) => el(id).querySelector('.value').textContent = val;
+        window.addEventListener('keydown', e => { updateText('keyboard-key', e.key); updateText('keyboard-code', e.code); });
+        window.addEventListener('mousemove', e => updateText('mouse-pos', `${e.x}, ${e.y}`));
+        window.addEventListener('mousedown', e => updateText('mouse-btn', `Button ${e.button} Down`));
+        window.addEventListener('mouseup', e => updateText('mouse-btn', `Button ${e.button} Up`));
 
-        function createChart() {
-            const ctx = document.getElementById('routineChart').getContext('2d');
-            const categoryTotals = routineData.reduce((acc, item) => {
-                acc[item.category] = (acc[item.category] || 0) + item.duration;
-                return acc;
-            }, {});
+        // Other Testers
+        const pixelTester = el('dead-pixel-tester');
+        el('screen-test-btn').onclick = () => {
+            pixelTester.style.display = 'block';
+            pixelTester.requestFullscreen();
+            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffffff', '#000000']; let i = 0;
+            const cycle = () => pixelTester.style.backgroundColor = colors[i++ % colors.length];
+            cycle();
+            pixelTester.onclick = cycle;
+            document.onfullscreenchange = () => { if(!document.fullscreenElement) pixelTester.style.display = 'none'; };
+        };
+        el('speaker-test-btn').onclick = () => { new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=')?.play(); };
+        el('vibration-test-btn').onclick = () => navigator.vibrate?.(200);
+        navigator.geolocation?.getCurrentPosition(p => el('geolocation-info').textContent = `Lat: ${p.coords.latitude.toFixed(4)}, Lon: ${p.coords.longitude.toFixed(4)}`);
+        
+        // --- Information Gathering ---
+        const n = navigator, w = window, s = screen;
+        let sys = [], hdw = [], bws = [], sec = [], gfx = [], med = [];
+        // System & Hardware
+        addInfo(sys, 'OS', (await n.userAgentData?.getHighEntropyValues(["platform", "platformVersion"]))?.platform || n.platform);
+        addInfo(sys, 'Architecture', (await n.userAgentData?.getHighEntropyValues(["architecture"]))?.architecture || 'N/A');
+        addInfo(sys, 'Device Model', (await n.userAgentData?.getHighEntropyValues(["model"]))?.model || 'N/A');
+        addInfo(hdw, 'CPU Cores', n.hardwareConcurrency);
+        if (n.deviceMemory) addInfo(hdw, 'RAM (approx)', `${n.deviceMemory} GB`);
+        if (n.storage?.estimate) { const { quota, usage } = await n.storage.estimate(); addInfo(hdw, 'Storage Quota', `${(quota/1024**3).toFixed(2)} GB`); addInfo(hdw, 'Storage Used', `${(usage/1024**2).toFixed(2)} MB`); }
+        if (n.getBattery) { const b = await n.getBattery(); addInfo(hdw, 'Battery Level', `${Math.round(b.level*100)}%`); addInfo(hdw, 'Battery Charging', b.charging); }
+        addAccordion('system-accordion', 'sys-info', 'System', sys);
+        addAccordion('system-accordion', 'hdw-info', 'Hardware', hdw);
 
-            const labels = Object.keys(categoryTotals);
-            const data = Object.values(categoryTotals);
-            
-            const backgroundColors = [
-                '#0d9488', '#0f766e', '#115e59', '#134e4a',
-                '#f59e0b', '#d97706', '#b45309',
-                '#64748b', '#475569',
-                '#3b82f6', '#2563eb',
-            ];
+        // Browser & Security
+        ['userAgent', 'vendor', 'language', 'onLine', 'cookieEnabled', 'pdfViewerEnabled', 'doNotTrack'].forEach(p => addInfo(bws, p, n[p]));
+        ['isSecureContext', 'crossOriginIsolated'].forEach(p => addInfo(sec, p, w[p]));
+        if(w.crypto?.subtle) { const algos = ['AES-GCM', 'RSA-OAEP', 'ECDH']; let content = ''; for(const a of algos) { content += `<li class="list-group-item">${a}: ${await w.crypto.subtle.generateKey({name:a, length:256, modulusLength:2048, namedCurve:'P-256'}, true, ['encrypt']).then(()=>'Yes').catch(()=>'No')}</li>`; } addAccordion('browser-accordion', 'crypto-info', 'Crypto Support', [content]); }
+        addAccordion('browser-accordion', 'bws-info', `Browser (${bws.length})`, bws);
+        addAccordion('browser-accordion', 'sec-info', `Security (${sec.length})`, sec);
+        
+        // Graphics & Media
+        const gl2 = document.createElement('canvas').getContext('webgl2');
+        if(gl2) { let content = []; const p = ['MAX_SAMPLES', 'MAX_3D_TEXTURE_SIZE']; p.forEach(key => addInfo(content, key, gl2.getParameter(gl2[key]))); addAccordion('media-accordion', 'gl2-info', 'WebGL2 Params', content); }
+        if (n.mediaCapabilities) { let content = []; const c = [{c:'av01.0.08M.08',n:'AV1'},{c:'hvc1.1.6.L93.B0',n:'HEVC'},{c:'vp09.00.50.08',n:'VP9'}]; for(const {c,n} of c){ const {supported} = await n.mediaCapabilities.decodingInfo({type:'file',video:{contentType:`video/mp4; codecs="${c}"`}}); content.push(`<li class="list-group-item d-flex justify-content-between"><strong>${n}</strong> <span class="value">${supported?'Yes':'No'}</span></li>`); } addAccordion('media-accordion', 'med-cap', 'Video Codec Support', content); }
 
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels.map(label => `${label} (${((categoryTotals[label] / 24) * 100).toFixed(1)}%)`),
-                    datasets: [{
-                        label: 'ঘণ্টা',
-                        data: data,
-                        backgroundColor: backgroundColors,
-                        borderColor: '#ffffff',
-                        borderWidth: 3,
-                        hoverOffset: 15
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                font: {
-                                    size: 12,
-                                    family: "'Hind Siliguri', sans-serif"
-                                },
-                                boxWidth: 15,
-                                padding: 15
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.parsed !== null) {
-                                        label += context.parsed.toFixed(1) + ' ঘণ্টা';
-                                    }
-                                    return label;
-                                }
-                            }
-                        }
-                    },
-                    cutout: '60%'
-                }
-            });
-        }
-
-        function updateCurrentTimeAndTask() {
-            const now = new Date();
-            const currentTimeEl = document.getElementById('currentTime');
-            
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
-            currentTimeEl.textContent = `এখন সময়: ${now.toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' })}`;
-
-            const currentHour = now.getHours() + now.getMinutes() / 60;
-            
-            let currentTaskIndex = -1;
-
-            for (let i = 0; i < routineData.length; i++) {
-                const item = routineData[i];
-                if (item.start < item.end) {
-                    if (currentHour >= item.start && currentHour < item.end) {
-                        currentTaskIndex = i;
-                        break;
-                    }
-                } else { 
-                    if (currentHour >= item.start || currentHour < item.end) {
-                        currentTaskIndex = i;
-                        break;
-                    }
-                }
-            }
-
-            const allTasks = document.querySelectorAll('.task-card');
-            allTasks.forEach(task => task.classList.remove('current'));
-
-            if (currentTaskIndex !== -1) {
-                const currentTaskCard = document.querySelector(`.task-card[data-index='${currentTaskIndex}']`);
-                if (currentTaskCard) {
-                    currentTaskCard.classList.add('current');
-                    currentTaskCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }
-        }
+        el('pills-tab').querySelectorAll('.nav-link .spinner-border')?.forEach(s => s.remove());
+    });
     </script>
 </body>
 </html>
